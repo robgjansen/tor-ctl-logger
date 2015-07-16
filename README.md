@@ -1,6 +1,6 @@
 ## tor-ctl-logger
 
-This utility connects to a running Tor (torproject.org) process on the Tor control port, registers for several asynchronous events, and logs the events to disk as they occur over time.
+This utility connects to a running Tor (https://www.torproject.org) process on the Tor control port, registers for several asynchronous events, and logs the events to disk as they occur over time.
 
 ## setup
 
