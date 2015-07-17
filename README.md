@@ -14,7 +14,7 @@ python tor-ctl-logger.py --help
 
 ## run 
 
-Your Tor node needs to run with [an open control port](https://www.torproject.org/docs/tor-manual.html.en). For example, if your TOr is running using the torrc option `ControlPort 9051`, you can then run the utility like this:
+Your Tor node needs to run with [an open control port](https://www.torproject.org/docs/tor-manual.html.en). For example, if your Tor is running using the torrc option `ControlPort 9051`, you can then run the utility like this:
 
 ```
 python tor-ctl-logger.py -p 9051 /path/to/log/file.log
