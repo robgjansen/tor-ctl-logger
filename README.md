@@ -14,11 +14,11 @@ python tor-ctl-logger.py --help
 
 ## run 
 
-If your Tor client runs on port `9051`, you can run the utility like this:
+If your Tor client runs with an open control port `9051`, you can run the utility like this:
 
 ```
 python tor-ctl-logger.py -p 9051 /path/to/log/file.log
 ```
 
-where `file.log` is where the output gets dumped.
+where `file.log` is where the output gets dumped. See [the Tor manual](https://www.torproject.org/docs/tor-manual.html.en) for information about how to set the control port.
 
