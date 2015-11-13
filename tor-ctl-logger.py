@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, os, argparse, time, stem
+import sys, os, argparse, time, datetime, stem
 from functools import partial
 from stem.control import EventType, Controller
 
@@ -68,8 +68,10 @@ def __handle_tor_event(logfile, event):
     __log(logfile, event.raw_content())
 
 def __log(logfile, msg):
-    s = time.time()
-    t = time.localtime(s)
-    print >>logfile, "{0} {1} {2}".format(time.strftime("%Y-%m-%d %H:%M:%S"), s, msg),
+    now = datetime.datetime.now()
+    utcnow = datetime.datetime.utcnow()
+    epoch = datetime.datetime(1970, 1, 1)
+    unix_ts = (utcnow - epoch).total_seconds()
+    print >>logfile, "{0} {1:.02f} {2}".format(now.strftime("%Y-%m-%d %H:%M:%S"), unix_ts, msg),
 
 if __name__ == '__main__': sys.exit(main())
