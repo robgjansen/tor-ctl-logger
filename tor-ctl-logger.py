@@ -51,9 +51,12 @@ def run(args):
             # some events are only supported in newer versions of tor, so ignore errors from older tors
             event_handler = partial(__handle_tor_event, logfile, )
             try:
+                events_added = []
                 for e in EVENTS:
                     if e in EventType:
                         torctl.add_event_listener(event_handler, EventType[e])
+                        events_added.append(e)
+                __log(logfile, "registered for the following events: {0}".format(' '.join(events_added)))
             except:
                 pass
 
