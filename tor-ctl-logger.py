@@ -8,26 +8,38 @@ DESCRIPTION="""
 This utility connects to Tor on an open Tor control port, and logs various asynchronous events to file.
 """
 
-#EVENTS=['ORCONN', 'CIRC', 'STREAM', 'BW', 'GUARD', 'INFO', 'NOTICE', 'WARN', 'ERR', 'HS_DESC', 'BUILDTIMEOUT_SET', 'DESCCHANGED', 'NEWCONSENSUS', 'NEWDESC', 'STATUS_CLIENT', 'STATUS_GENERAL', 'STATUS_SERVER', 'CONN_BW', 'CIRC_BW', 'STREAM_BW', 'TB_EMPTY', 'HS_DESC_CONTENT']
-
-# collect everything except DEBUG log messages
-EVENTS = [e for e in list(EventType) if e not in ['DEBUG']] #['DEBUG', 'INFO', 'NOTICE', 'WARN', 'ERR']
+# by default, collect everything that our stem version supports, except DEBUG log messages
+STEM_EVENTS = list(EventType)
+DEFAULT_EVENTS = [e for e in STEM_EVENTS if e not in ['DEBUG']] #['DEBUG', 'INFO', 'NOTICE', 'WARN', 'ERR']
 
 def main():
     # construct the options
     parser = argparse.ArgumentParser(
-        description=DESCRIPTION, 
+        description=DESCRIPTION,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter) # RawTextHelpFormatter
 
-    parser.add_argument('-p', 
-        help="""the Tor control port number N""", 
+    parser.add_argument('-p', '--port',
+        help="""the Tor control port number N""",
         action="store", type=int, metavar="N",
         dest="ctlport", required=True)
 
-    parser.add_argument('-l', 
-        help="""a STRING path to log Tor controller output""", 
+    parser.add_argument('-l', '--logpath',
+        help="""a STRING path to log Tor controller output""",
         action="store", type=str, metavar="STRING",
         dest="logpath", default="{0}/{1}".format(os.getcwd(), "tor-ctl-logger.log"))
+
+    parser.add_argument('-e', '--events',
+        help="""the Tor control EVENT(s) recognized by stem that should be monitored and logged""",
+        metavar="EVENT", nargs='+',
+        action="store", dest="events",
+        default=DEFAULT_EVENTS,
+        choices=STEM_EVENTS)
+
+    parser.add_argument('-c', '--custom-events',
+        help="""custom Tor control EVENT(s) not recognized by stem that should be monitored and logged""",
+        metavar="CUSTOM_EVENT", nargs='+',
+        action="store", dest="custom_events",
+        default=[])
 
     # get args
     args = parser.parse_args()
@@ -50,15 +62,30 @@ def run(args):
             # register for async events!
             # some events are only supported in newer versions of tor, so ignore errors from older tors
             event_handler = partial(__handle_tor_event, logfile, )
-            try:
-                events_added = []
-                for e in EVENTS:
-                    if e in EventType:
-                        torctl.add_event_listener(event_handler, EventType[e])
+            events_added = []
+
+            for e in args.events:
+                assert e in EventType
+                # add all configured events that our stem version supports
+                # warn and ignore those that our stem supports but our Tor does not
+                try:
+                    torctl.add_event_listener(event_handler, EventType[e])
+                    events_added.append(e)
+                except:
+                    warn_msg = "[WARNING] event '{}' is recognized by stem but not by tor\n".format(e)
+                    __log(logfile, warn_msg)
+                    pass
+
+            for e in args.custom_events:
+                    try:
+                        torctl.add_event_listener(event_handler, e)
                         events_added.append(e)
-                __log(logfile, "registered for the following events: {0}".format(' '.join(events_added)))
-            except:
-                pass
+                    except:
+                        err_msg = "[ERROR] event '{}' is not recognized by tor\n".format(e)
+                        __log(logfile, err_msg)
+                        __log(sys.stderr, err_msg)
+                        return
+            __log(logfile, "registered for the following events: {0}\n".format(' '.join(events_added)))
 
             # let stem run its threads and log all of the events, until user interrupts
             try:
